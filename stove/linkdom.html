@@ -1,0 +1,98 @@
+<html>
+  <head>
+    <title>linkdom</title>
+    <style>
+      table{
+        width: 100%;
+        color: #d2d2d2;
+      }
+      .box{
+        display: inline-block;
+        width: 100px;
+        height: 50px;
+        line-height: 50px;
+        margin-bottom:50px;
+        text-align: center;
+        color: red;
+        border: 1px solid;
+        cursor: pointer;
+      }
+      td{
+        border: 1px dashed;
+        width: 20%;
+      }
+    </style>
+    <script src="../linkdom.js"></script>
+  </head>
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>1</th>
+          <th>2</th>
+          <th>3</th>
+          <th>4</th>
+          <th>5</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div id="box1" class="box">BOX-1</div></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><div id="box2" class="box">BOX-2</div></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td><div id="box3" class="box">BOX-3</div></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><div id="box4" class="box">BOX-4</div></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td><div id="box5" class="box">BOX-5</div></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td><div id="box6" class="box">BOX-6</div></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td><div id="box7" class="box">BOX-7</div></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+  <script>
+    function $(q) {
+      return document.querySelector(q);
+    }
+    var conf = {
+      skewing: 100,
+      lineWidth:10,
+    }
+    var boxs = Array.from(document.getElementsByClassName('box'));
+    var target = $('#box3');
+    var lineContainer = LinkDOM.createLineContainer();
+    var linesAndInfo = LinkDOM.getLinesAndInfo([$('#box2'),target],target,conf);
+    lineContainer.paint(linesAndInfo);
+  </script>
+</html>
