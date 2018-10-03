@@ -82,7 +82,7 @@ LinkDOM.getLinesCoor = function(points,Ematrix,targetPoint,conf){
   var lines = [];
   // 处理用户未设置但逻辑必需的配置
   conf.lineWidth = conf.lineWidth || Tool.DEFAULT.lineWidth;
-  var skewing = conf.skewing;
+  var skewing = conf.bridgeLineSkewing || Tool.DEFAULT.bridgeLineSkewing;
   // 获取边界方向
   index['x'] = X.indexOf(targetPoint.x);
   index['y']= Y.indexOf(targetPoint.y);
@@ -107,6 +107,7 @@ LinkDOM.getLinesCoor = function(points,Ematrix,targetPoint,conf){
       return
     }
     var line = new _this.Line();
+    line.type = 'source'; // 标记为源头发出的线
     line.start[edge] = point[edge];
     line.start[unedge] = point[unedge];
     line.end[edge] = bridgePoint[edge];
@@ -114,7 +115,7 @@ LinkDOM.getLinesCoor = function(points,Ematrix,targetPoint,conf){
     line.start[edge] = line.start[edge] 
                        + point.po[edge === 'x' ? 'width' : 'height'] / 2 
                          * (line.start[edge] < line.end[edge] ? 1 : -1)
-                       + conf.lineWidth / 2;;
+                       + conf.lineWidth / 2;
     lines.push(line);
   });
   // 补充最后三条线
@@ -122,6 +123,7 @@ LinkDOM.getLinesCoor = function(points,Ematrix,targetPoint,conf){
   var unedgeArr = Ematrix[unedge.toUpperCase()];
   [0, unedgeArr.length - 1].forEach(function(index){
     var line = new _this.Line();
+    line.type = 'middle'; // 标记为中间的桥接线
     line.start[edge] = bridgePoint[edge];
     line.start[unedge] = unedgeArr[index];
     line.end[edge] = bridgePoint[edge];
@@ -130,7 +132,7 @@ LinkDOM.getLinesCoor = function(points,Ematrix,targetPoint,conf){
   })
   // 指向目标元素
   var line = new _this.Line();
-  line.type = 'target'; // 标记为目标指向元素
+  line.type = 'target'; // 标记指向目标的线
   line.start[edge] = bridgePoint[edge];
   line.start[unedge] = bridgePoint[unedge];
   line.end[edge] = targetPoint[edge];
@@ -230,15 +232,137 @@ LinkDOM._getMiddlePointCoor = function(angleCoor) {
 // 默认配置
 Tool.DEFAULT = {
   lineWidth:2,
+  bridgeLineSkewing:20,
   background :'background:green',
+  backgroundColor:'green'
 }
 
+// 静态常量
+Tool.STATIC = {
+  arrowLocalMap:{
+    arrowStart_x_true:'left:0',
+    arrowMiddle_x_true:'left:50%',
+    arrowEnd_x_true:'right:0',
+    arrowStart_y_true:'top:0',
+    arrowMiddle_y_true:'top:50%',
+    arrowEnd_y_true:'bottom:0',
+    arrowStart_x_false:'right:0',
+    arrowMiddle_x_false:'right:50%',
+    arrowEnd_x_false:'left:0',
+    arrowStart_y_false:'bottom:0',
+    arrowMiddle_y_false:'bottom:50%',
+    arrowEnd_y_false:'top:0',
+  }
+}
+
+Tool._getArrowMainCss = function(local,line,conf){
+  // default
+  var cssArr = [
+    'color:'+ (conf.arrowColor || conf.backgroundColor || this.DEFAULT.backgroundColor),
+    'position:absolute',
+    'border-style:solid',
+    'z-index:100'
+  ];
+  var edge = line.start.x === line.end.x ? 'y' : 'x'; // 边界方向
+  var unedge = edge === 'x' ? 'y' : 'x';
+  // border
+  var borderWidth = [];
+  var borderColor = [];
+  var arrowConfig = conf.lineConfig[local];
+  if(typeof arrowConfig === 'boolean' || arrowConfig){
+    arrowConfig = {};
+  }
+  var arrowColor = arrowConfig.arrowColor || 'currentcolor'; // 箭头的颜色
+  conf.arrowSize = conf.arrowSize || conf.lineWidth;
+  var i = 0;
+  while(i < 4){
+    borderWidth.push(conf.arrowSize + 'px');
+    if(this._isLightOnArrowPart(line,i + 1,edge)){
+      borderColor.push(arrowColor);
+    } else {
+      borderColor.push('transparent');
+    }
+    i++;
+  }
+  cssArr.push('border-width:' + borderWidth.join(' '));
+  cssArr.push('border-color:' + borderColor.join(' '));
+  // 箭头位置
+  var localCss;
+  if(edge === 'x'){
+    localCss = this.STATIC.arrowLocalMap[local +'_'+ edge + '_' + (line.end.x - line.start.x > 0)];
+  } else {
+    localCss = this.STATIC.arrowLocalMap[local +'_'+ edge + '_' + (line.end.y - line.start.y > 0)];
+  }
+  if(local === 'arrowEnd'){
+    var p = 1;
+    if((line.end.x < line.start.x || line.end.y < line.start.y)){
+      p = -1;
+    }
+    localCss = localCss.replace(':0',':' + conf.arrowSize / 2 * p + 'px');
+  }
+  cssArr.push(localCss);
+  // 计算偏移距离
+  //p = 1;
+  //if((line.end.x > line.start.x || line.end.y > line.start.y)){
+  //  p = -1;
+  //}
+  var skew = [
+    conf.arrowSize / 2 * 3 + 'px',
+    conf.arrowSize * -1  + conf.lineWidth/2 + 'px'
+  ];
+  if(edge === 'y'){
+    skew.reverse();
+  }
+  cssArr.push('transform:translate('+ skew.join(',') +')');
+  return cssArr;
+}
+
+Tool._isLightOnArrowPart = function (line,index,edge) {
+  if(edge === 'x'){
+    if(index === 1 || index === 3){
+      return false;
+    } else {
+      if(index === 4){
+        return line.end.x - line.start.x > 0;
+      } else {
+        return line.start.x - line.end.x > 0;
+      }
+    }
+  }
+  if(edge === 'y'){
+    if(index === 2 || index === 4){
+      return false;
+    } else {
+      if(index === 1){
+        return line.end.y - line.start.y > 0;
+      } else {
+        return line.start.y - line.end.y > 0;
+      }
+    }
+  }
+}
+
+Tool.createArrow = function(local,line,conf) {
+  var val = conf.lineConfig[local];
+  var arrowMainCss = this._getArrowMainCss(local,line,conf);
+  if(typeof val === 'boolean'){
+    
+  }
+  return this.createElement('div',arrowMainCss,{
+    class:'linkdom-default-arrow'
+  })
+}
 // @storm
+// 扩展原生  createElement
 Tool.createElement = function(tag,cssArr,attr) {
   var dom = document.createElement(tag);
-  // console.log(cssArr);
   if(cssArr){
-    dom.style.cssText = cssArr.join(';');
+    dom.style.cssText += cssArr.join(';');
+  }
+  if(attr && typeof attr === 'object'){
+    Object.keys(attr).forEach(function(key){
+      dom.setAttribute(key,attr[key]);
+    })
   }
   return dom;
 }
@@ -266,7 +390,9 @@ Tool.linesToFragment = function(Elines) {
 
 // @storm lineToElement
 Tool.lineToElement = function(line,conf){
-  // console.log(line)
+  // console.log(conf)
+  var _this = this;
+  var lineDOM = null; // line dom
   var left = line.start.x;
   var top =  line.start.y;
   var width = line.start.x === line.end.x 
@@ -276,6 +402,7 @@ Tool.lineToElement = function(line,conf){
               ? conf.lineWidth
               : line.end.y - line.start.y;
   // 进行调整
+  // console.log(width);
   if(width < 0){
     left = left + width + conf.lineWidth;
     width = -1 * width;
@@ -284,13 +411,68 @@ Tool.lineToElement = function(line,conf){
     top = top + height + conf.lineWidth;
     height = -1 * height;
   }
+  // console.log(width);
   //
-  return this.createElement('div',[
+  lineDOM = this.createElement('div',[
     'position:absolute',
-    this.DEFAULT.background,
+    'background-color:' + this.DEFAULT.backgroundColor,
     'left:' + left + 'px',
     'top:' + top + 'px',
     'width:'+ width + 'px',
-    'height:' + height + 'px'
-  ])
+    'height:' + height + 'px',
+    'z-index:99'
+  ]);
+  
+  ['lineConfig','lastLineConfig'].forEach(function (lineType){
+    // 根据配置修改线条样式
+    if(conf[lineType]){
+      // 创建箭头
+      if (
+        (line.type === 'source' && lineType === 'lineConfig') || 
+        (lineType === 'lastLineConfig' && line.type === 'target')
+      ){
+        ['arrowEnd','arrowMiddle','arrowStart'].forEach(function(key){
+          if(conf[lineType][key]){
+            lineDOM.appendChild(_this.createArrow(key,line,conf))
+          }
+        });
+      }
+      // 将用户自定义的内容添加到线条了
+      ['innerHTML'].forEach(function(key){
+        if(conf[lineType][key]){
+          var t = conf[lineType][key];
+          if(typeof t === 'string'){
+            _this.textToNodes(t).forEach(function(node){
+              lineDOM.appendChild(node);
+            });
+          }
+          if(_this.isDOM(t)){
+            lineDOM.appendChild(t)
+          }
+        }
+      })
+    }
+  })
+  return lineDOM
 }
+
+// @storm
+Tool.textToNodes = function(text){
+  // 检查类型， 要求必须是
+  var nodes = [];
+  if(typeof text === 'string'){
+    var con = document.createElement('div');
+    con.innerHTML = text;
+    nodes = Array.from(con.childNodes);
+  }
+  return nodes;
+}
+
+// @storm 判断一个对象是否为DOM对象
+Tool.isDOM = ( typeof HTMLElement === 'object' ) ?
+  function(obj){
+      return obj instanceof HTMLElement;
+  } :
+  function(obj){
+      return obj && typeof obj === 'object' && obj.nodeType === 1 && typeof obj.nodeName === 'string';
+  }
