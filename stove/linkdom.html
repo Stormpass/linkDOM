@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
   <head>
     <title>linkdom</title>
@@ -81,18 +82,29 @@
       </tbody>
     </table>
   </body>
-  <script>
-    function $(q) {
-      return document.querySelector(q);
+  <script type="text/javascript">
+    window.onload = function (){
+      var lineContainer = LinkDOM.createLineContainer();
+      var conf = {
+        bridgeLineSkewing: 200,
+        lineWidth:1,
+        backgroundColor:'green',
+        lineConfig:{
+          innerHTML:'<line></line>',
+          arrowEnd:true,
+          arrowMiddle:true,
+          arrowStart:true
+        },
+        arrowTargetConfig:{
+          show:false,
+          innerHTML:'<a></a>',
+        }
+      }
+      var boxs = Array.from(document.getElementsByClassName('box'));
+      var target = document.getElementById('box3');
+      var linesAndInfo = LinkDOM.getLinesAndInfo(boxs,target,conf);
+      lineContainer.paint(linesAndInfo);
     }
-    var conf = {
-      skewing: 100,
-      lineWidth:10,
-    }
-    var boxs = Array.from(document.getElementsByClassName('box'));
-    var target = $('#box3');
-    var lineContainer = LinkDOM.createLineContainer();
-    var linesAndInfo = LinkDOM.getLinesAndInfo([$('#box2'),target],target,conf);
-    lineContainer.paint(linesAndInfo);
+
   </script>
 </html>
