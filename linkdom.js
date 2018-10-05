@@ -293,21 +293,21 @@ Tool._getArrowMainCss = function(local,line,conf){
   } else {
     localCss = this.STATIC.arrowLocalMap[local +'_'+ edge + '_' + (line.end.y - line.start.y > 0)];
   }
-  if(local === 'arrowEnd'){
+  if(local === 'arrowEnd'&& line.type === 'source'){
     var p = 1;
     if((line.end.x < line.start.x || line.end.y < line.start.y)){
       p = -1;
     }
-    localCss = localCss.replace(':0',':' + conf.arrowSize / 2 * p + 'px');
+    localCss = localCss.replace(':0',':' + conf.lineWidth / 2 * p + 'px');
   }
   cssArr.push(localCss);
   // 计算偏移距离
-  //p = 1;
-  //if((line.end.x > line.start.x || line.end.y > line.start.y)){
-  //  p = -1;
-  //}
+  p = 1;
+  if((line.end.x > line.start.x || line.end.y > line.start.y)){
+   p = -1;
+  }
   var skew = [
-    conf.arrowSize / 2 * 3 + 'px',
+    (conf.arrowSize + conf.lineWidth) + 'px',
     conf.arrowSize * -1  + conf.lineWidth/2 + 'px'
   ];
   if(edge === 'y'){
@@ -345,12 +345,16 @@ Tool._isLightOnArrowPart = function (line,index,edge) {
 Tool.createArrow = function(local,line,conf) {
   var val = conf.lineConfig[local];
   var arrowMainCss = this._getArrowMainCss(local,line,conf);
-  if(typeof val === 'boolean'){
-    
+  if(typeof val === 'object' && val !== null && val.css){
+    Object.keys(val.css).forEach(function(key){
+      arrowMainCss.push(key + ':' + val.css[key]);
+    })
   }
-  return this.createElement('div',arrowMainCss,{
-    class:'linkdom-default-arrow'
-  })
+  return this.createElement(
+    'div',
+    arrowMainCss, 
+    conf.lineConfig ? conf.lineConfig.attr : null
+  )
 }
 // @storm
 // 扩展原生  createElement
@@ -424,33 +428,34 @@ Tool.lineToElement = function(line,conf){
   ]);
   
   ['lineConfig','lastLineConfig'].forEach(function (lineType){
-    // 根据配置修改线条样式
-    if(conf[lineType]){
-      // 创建箭头
-      if (
-        (line.type === 'source' && lineType === 'lineConfig') || 
-        (lineType === 'lastLineConfig' && line.type === 'target')
-      ){
+    if (
+      (line.type === 'source' && lineType === 'lineConfig') || 
+      (lineType === 'lastLineConfig' && line.type === 'target')
+    ){ 
+      // 根据配置修改线条样式
+      if(conf[lineType]){
+        // 创建箭头
         ['arrowEnd','arrowMiddle','arrowStart'].forEach(function(key){
           if(conf[lineType][key]){
             lineDOM.appendChild(_this.createArrow(key,line,conf))
           }
         });
+        
+        // 将用户自定义的内容添加到线条了
+        ['innerHTML'].forEach(function(key){
+          if(conf[lineType][key]){
+            var t = conf[lineType][key];
+            if(typeof t === 'string'){
+              _this.textToNodes(t).forEach(function(node){
+                lineDOM.appendChild(node);
+              });
+            }
+            if(_this.isDOM(t)){
+              lineDOM.appendChild(t)
+            }
+          }
+        })
       }
-      // 将用户自定义的内容添加到线条了
-      ['innerHTML'].forEach(function(key){
-        if(conf[lineType][key]){
-          var t = conf[lineType][key];
-          if(typeof t === 'string'){
-            _this.textToNodes(t).forEach(function(node){
-              lineDOM.appendChild(node);
-            });
-          }
-          if(_this.isDOM(t)){
-            lineDOM.appendChild(t)
-          }
-        }
-      })
     }
   })
   return lineDOM

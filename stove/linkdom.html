@@ -152,11 +152,11 @@
       var conf = {
         bridgeLineSkewing: 200,
         lineWidth:2,
-        backgroundColor:'green',
-        arrowColor:'red',
+        // backgroundColor:'green',
+        // arrowColor:'green',
         arrowSize:10,
         lineConfig:{
-          innerHTML:'<a></a>', // string or dom
+          innerHTML:'<a></a><div><div>', // string or dom
           arrowEnd:true, // boolean or dom
           arrowMiddle:true, // boolean or dom
           //arrowStart:true // boolean or dom
@@ -167,7 +167,7 @@
         }
       }
       var boxs = Array.from(document.getElementsByClassName('box'));
-      var target = document.getElementById('box1');
+      var target = document.getElementById('box3');
       var linesAndInfo = LinkDOM.getLinesAndInfo(boxs,target,conf);
       lineContainer.paint(linesAndInfo);
 
