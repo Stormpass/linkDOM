@@ -15,33 +15,37 @@ LinkDOM.Line = function(){
   this.end = {}
 }
 
-LinkDOM.Container = function (){
-  this.con = Tool.createElement('div',[
-    'position:absolute',
-    'display:block',
-    'left:0px',
-    'top:0px',
-    'width:100%'
-  ]);
+// LinkDOM.Container = function (){
+//   this.dom = Tool.createElement('div',[
+//     'position:absolute',
+//     'display:block',
+//     'left:0px',
+//     'top:0px',
+//     'width:100%'
+//   ]);
 
-  document.getElementsByTagName('body')[0].appendChild(this.con);
-}
-LinkDOM.Container.prototype.show = function(){
-  this.con.style.setProperty('display','block');
-}
-LinkDOM.Container.prototype.hide = function(){
-  this.con.style.setProperty('display','none');
-}
-LinkDOM.Container.prototype.paint = function(Elines){
-  var doc = Tool.linesToFragment(Elines);
-  this.con.appendChild(doc);
-  return doc;
-}
+//   document.getElementsByTagName('body')[0].appendChild(this.dom);
+// }
 
+// LinkDOM.Container.prototype.paint = function(Elines){
+//   var doc = Tool.linesToFragment(Elines);
+//   this.dom.appendChild(doc);
+//   return doc;
+// }
 
 LinkDOM.createLineContainer = function (){
-  return new this.Container();
+  var linesCon = Tool.createElement('div',Tool.DEFAULT.linesContainerCss);
+  document.getElementsByTagName('body')[0].appendChild(linesCon);
+  var coverView = new Tool.CoverView(linesCon);
+  coverView.paint = function(Elines){
+    var doc = Tool.linesToFragment(Elines);
+    var lineCon = doc.firstChild;
+    this.dom.appendChild(doc);
+    return new Tool.CoverView(lineCon);
+  }
+  return coverView
 }
+
 // 获取所有需要绘制的线以及其他信息
 LinkDOM.getLinesAndInfo = function(els,target,conf){
   var _this = this;
@@ -233,8 +237,18 @@ LinkDOM._getMiddlePointCoor = function(angleCoor) {
 Tool.DEFAULT = {
   lineWidth:2,
   bridgeLineSkewing:20,
-  background :'background:green',
-  backgroundColor:'green'
+  backgroundColor:'#00868B',
+  linesContainerCss:[
+    'position:absolute',
+    'display:block',
+    'left:0px',
+    'top:0px',
+    'width:100%',
+    'opacity:1'
+  ],
+  fadeIn:{
+    duration: 300
+  }
 }
 
 // 静态常量
@@ -257,6 +271,8 @@ Tool.STATIC = {
 
 Tool._getArrowMainCss = function(local,line,conf){
   // default
+  conf.lineConfig = conf.lineConfig || {};
+  conf.lastLineConfig = conf.lastLineConfig || {};
   var cssArr = [
     'color:'+ (conf.arrowColor || conf.backgroundColor || this.DEFAULT.backgroundColor),
     'position:absolute',
@@ -269,7 +285,7 @@ Tool._getArrowMainCss = function(local,line,conf){
   var borderWidth = [];
   var borderColor = [];
   var arrowConfig = conf.lineConfig[local];
-  if(typeof arrowConfig === 'boolean' || arrowConfig){
+  if(typeof arrowConfig === 'boolean' || !arrowConfig){
     arrowConfig = {};
   }
   var arrowColor = arrowConfig.arrowColor || 'currentcolor'; // 箭头的颜色
@@ -298,7 +314,7 @@ Tool._getArrowMainCss = function(local,line,conf){
     if((line.end.x < line.start.x || line.end.y < line.start.y)){
       p = -1;
     }
-    localCss = localCss.replace(':0',':' + conf.lineWidth / 2 * p + 'px');
+    localCss = localCss.replace(':0',':' + conf.lineWidth  / 2 * p + 'px');
   }
   cssArr.push(localCss);
   // 计算偏移距离
@@ -379,7 +395,8 @@ Tool.linesToFragment = function(Elines) {
   var doc = document.createDocumentFragment();
   // 考虑线宽引起的偏移量
   var container = this.createElement('div',[
-    'transform:translate' 
+    'opacity:1',
+    'transform:translate'
     + Elines.unedge.toUpperCase() 
     + '(' + conf.lineWidth / 2 * -1 +'px)'
   ]);
@@ -480,4 +497,53 @@ Tool.isDOM = ( typeof HTMLElement === 'object' ) ?
   } :
   function(obj){
       return obj && typeof obj === 'object' && obj.nodeType === 1 && typeof obj.nodeName === 'string';
+  }
+
+  // Interface
+  Tool.CoverView = function (dom){
+    if(Tool.isDOM(dom)){
+      this.dom = dom;
+      this.style = this.dom.style;
+    } else {
+      console.error('dom except');
+    }
+  }
+  Tool.CoverView.prototype.show = function(){
+    this.dom.style.setProperty('display','block');
+    return this;
+  }
+  Tool.CoverView.prototype.hide = function(){
+    this.dom.style.setProperty('display','none');
+    return this;
+  }
+  Tool.CoverView.prototype.hidden = function(){
+    this.dom.style.setProperty('opacity',0);
+    return this;
+  }
+  
+  Tool.CoverView.prototype.appear = function(){
+    this.dom.style.setProperty('opacity',1);
+    return this;
+  }
+
+  Tool.CoverView.prototype.fadeIn = function(dur){
+    var _this = this;
+    dur = dur || this.DEFAULT.fadeIn.duration;
+    this.style.setProperty('opacity', 0);
+    _this.show();
+    setTimeout(function(){
+      _this.style.setProperty('transition','all ' + dur/1000 + 's ease-in-out');
+      _this.style.setProperty('opacity', 1);
+    },0);
+    return this;
+  }
+
+  Tool.CoverView.prototype.fadeOut = function(dur){
+    var _this = this;
+    dur = dur || this.DEFAULT.fadeIn.duration;
+    setTimeout(function(){
+      _this.style.setProperty('transition','all ' + dur/1000 + 's ease-in-out');
+      _this.style.setProperty('opacity', 0);
+    },0);
+    return this;
   }

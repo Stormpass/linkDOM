@@ -22,15 +22,6 @@
         border: 1px dashed;
         width: 20%;
       }
-      .linkdom-default-arrow-1{
-        width: 0;
-        height: 0;
-        border-width:10px 10px 10px 10px;
-        border-color:transparent transparent transparent green; 
-        right:0;
-        transform: translate(15px,-5px);
-        z-index: 100;
-      }
     </style>
     <script src="../linkdom.js"></script>
   </head>
@@ -90,91 +81,40 @@
         </tr>
       </tbody>
     </table>
-    <table>
-      <thead>
-        <tr>
-          <th>1</th>
-          <th>2</th>
-          <th>3</th>
-          <th>4</th>
-          <th>5</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><div id="box8" class="box-1">BOX-1</div></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td><div id="box9" class="box-1">BOX-2</div></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td><div id="box10" class="box-1">BOX-3</div></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td><div id="box11" class="box-1">BOX-4</div></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td><div id="box12" class="box-1">BOX-5</div></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td><div id="box13" class="box-1">BOX-6</div></td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-        <tr>
-          <td></td>
-          <td></td>
-          <td><div id="box14" class="box-1">BOX-7</div></td>
-          <td></td>
-          <td></td>
-        </tr>
-      </tbody>
-    </table>
+  
   </body>
   <script type="text/javascript">
     window.onload = function (){
       var lineContainer = LinkDOM.createLineContainer();
       var conf = {
         bridgeLineSkewing: 200,
-        lineWidth:2,
+        //lineWidth:2,
         // backgroundColor:'green',
         // arrowColor:'green',
-        arrowSize:10,
-        lineConfig:{
-          innerHTML:'<a></a><div><div>', // string or dom
-          arrowEnd:true, // boolean or dom
-          arrowMiddle:true, // boolean or dom
-          //arrowStart:true // boolean or dom
-        },
-        lastLineConfig:{
-          innerHTML:'<a></a>', // string or dom
-          arrowEnd:true, // boolean or dom
-        }
+        // arrowSize:10,
+        // lineConfig:{
+        //   //innerHTML:'<a></a><div></div>', // string or dom
+        //   //arrowEnd:true, // boolean or dom
+        //   //arrowMiddle:true, // boolean or dom
+        //   //arrowStart:true // boolean or dom
+        // },
+        // lastLineConfig:{
+        //   innerHTML:'<a></a>', // string or dom
+        //   arrowEnd:true, // boolean or dom
+        // }
       }
       var boxs = Array.from(document.getElementsByClassName('box'));
       var target = document.getElementById('box3');
       var linesAndInfo = LinkDOM.getLinesAndInfo(boxs,target,conf);
-      lineContainer.paint(linesAndInfo);
+      var lines1 = lineContainer.paint(linesAndInfo);
+      lines1.hidden()
+      //setTimeout(function(){
+      //  lines1.fadeOut(1000);
+      //},3000);
+      setTimeout(function(){
+        lines1.fadeIn(1000);
+      },5000);
 
-      var boxs_1 = Array.from(document.getElementsByClassName('box-1'));
-      var target_1 = document.getElementById('box14');
-      var linesAndInfo_1 = LinkDOM.getLinesAndInfo(boxs_1,target_1,conf);
-      lineContainer.paint(linesAndInfo_1);
     }
 
   </script>
