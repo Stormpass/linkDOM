@@ -15,24 +15,6 @@ LinkDOM.Line = function(){
   this.end = {}
 }
 
-// LinkDOM.Container = function (){
-//   this.dom = Tool.createElement('div',[
-//     'position:absolute',
-//     'display:block',
-//     'left:0px',
-//     'top:0px',
-//     'width:100%'
-//   ]);
-
-//   document.getElementsByTagName('body')[0].appendChild(this.dom);
-// }
-
-// LinkDOM.Container.prototype.paint = function(Elines){
-//   var doc = Tool.linesToFragment(Elines);
-//   this.dom.appendChild(doc);
-//   return doc;
-// }
-
 LinkDOM.createLineContainer = function (){
   var linesCon = Tool.createElement('div',Tool.DEFAULT.linesContainerCss);
   document.getElementsByTagName('body')[0].appendChild(linesCon);
@@ -97,6 +79,15 @@ LinkDOM.getLinesCoor = function(points,Ematrix,targetPoint,conf){
     edge = 'y';
     unedge = 'x';
   }
+  if(points.length === 2){
+    if(X.length > 1){
+       edge = 'x';
+       unedge = 'y';
+    } else if(Y.length > 1){
+      edge = 'y';
+      unedge = 'x';   
+    }
+  }
   if(!edge){
     console.error('目标元素未在在边界上');
     return
@@ -157,7 +148,6 @@ LinkDOM.getLinesCoor = function(points,Ematrix,targetPoint,conf){
 LinkDOM.getPointsMatrix = function (points){
   // console.log(points);
   var _this = this;
-  var empty = {};
   // 先获取维度
   var Y = []; // Y的第n个索引代表第n行
   var X = []; // X的第n个索引代表第n列
@@ -202,14 +192,13 @@ LinkDOM._findDimCoor = function(X, Y, p) {
 // @storm 获取元素相对文档的绝对定位
 LinkDOM._getPagePosition = function(el) {
   var rect = el.getBoundingClientRect();
-  rect = JSON.parse(JSON.stringify(rect));
   var scrollX = window.pageXOffset;
   var scrollY = window.pageYOffset;
   ['top', 'bottom'].forEach(function(key) {
-    rect[key] = scrollY + Number(rect[key]);
+    rect[key] =  parseInt(scrollY) + parseInt(rect[key]);
   });
   ['left', 'right'].forEach(function(key) {
-    rect[key] = scrollX + Number(rect[key]);
+    rect[key] =  parseInt(scrollX) + parseInt(rect[key]);
   })
   return rect;
 }
@@ -236,7 +225,7 @@ LinkDOM._getMiddlePointCoor = function(angleCoor) {
 // 默认配置
 Tool.DEFAULT = {
   lineWidth:2,
-  bridgeLineSkewing:20,
+  bridgeLineSkewing:50,
   backgroundColor:'#00868B',
   linesContainerCss:[
     'position:absolute',
@@ -269,10 +258,11 @@ Tool.STATIC = {
   }
 }
 
-Tool._getArrowMainCss = function(local,line,conf){
+Tool._getArrowMainCss = function(lineType,local,line,conf){
   // default
-  conf.lineConfig = conf.lineConfig || {};
-  conf.lastLineConfig = conf.lastLineConfig || {};
+  var lineConfig = conf[lineType] || {}
+  // conf.lineConfig = conf.lineConfig || {};
+  // conf.lastLineConfig = conf.lastLineConfig || {};
   var cssArr = [
     'color:'+ (conf.arrowColor || conf.backgroundColor || this.DEFAULT.backgroundColor),
     'position:absolute',
@@ -284,7 +274,7 @@ Tool._getArrowMainCss = function(local,line,conf){
   // border
   var borderWidth = [];
   var borderColor = [];
-  var arrowConfig = conf.lineConfig[local];
+  var arrowConfig = lineConfig[local];
   if(typeof arrowConfig === 'boolean' || !arrowConfig){
     arrowConfig = {};
   }
@@ -323,7 +313,7 @@ Tool._getArrowMainCss = function(local,line,conf){
    p = -1;
   }
   var skew = [
-    (conf.arrowSize + conf.lineWidth) + 'px',
+    (conf.arrowSize + conf.lineWidth / 2) + 'px',
     conf.arrowSize * -1  + conf.lineWidth/2 + 'px'
   ];
   if(edge === 'y'){
@@ -358,9 +348,9 @@ Tool._isLightOnArrowPart = function (line,index,edge) {
   }
 }
 
-Tool.createArrow = function(local,line,conf) {
-  var val = conf.lineConfig[local];
-  var arrowMainCss = this._getArrowMainCss(local,line,conf);
+Tool.createArrow = function(lineType,local,line,conf) {
+  var val = conf[lineType][local];
+  var arrowMainCss = this._getArrowMainCss(lineType,local,line,conf);
   if(typeof val === 'object' && val !== null && val.css){
     Object.keys(val.css).forEach(function(key){
       arrowMainCss.push(key + ':' + val.css[key]);
@@ -369,7 +359,7 @@ Tool.createArrow = function(local,line,conf) {
   return this.createElement(
     'div',
     arrowMainCss, 
-    conf.lineConfig ? conf.lineConfig.attr : null
+    conf[lineType] ? conf[lineType].attr : null
   )
 }
 // @storm
@@ -454,7 +444,7 @@ Tool.lineToElement = function(line,conf){
         // 创建箭头
         ['arrowEnd','arrowMiddle','arrowStart'].forEach(function(key){
           if(conf[lineType][key]){
-            lineDOM.appendChild(_this.createArrow(key,line,conf))
+            lineDOM.appendChild(_this.createArrow(lineType,key,line,conf))
           }
         });
         
