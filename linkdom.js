@@ -1,5 +1,6 @@
-var LinkDOM = {};
-var Tool = {};
+var LinkDOM = {
+  Tool:{}
+};
 
 // @storm 
 LinkDOM.Point = function(conf) {
@@ -16,25 +17,38 @@ LinkDOM.Line = function(){
 }
 
 LinkDOM.createLineContainer = function (){
-  var linesCon = Tool.createElement('div',Tool.DEFAULT.linesContainerCss);
+  var linesCon = LinkDOM.Tool.createElement('div',LinkDOM.Tool.DEFAULT.linesContainerCss);
   document.getElementsByTagName('body')[0].appendChild(linesCon);
-  var coverView = new Tool.CoverView(linesCon);
+  var coverView = new LinkDOM.Tool.CoverView(linesCon);
   coverView.paint = function(Elines){
-    var doc = Tool.linesToFragment(Elines);
+    var doc = LinkDOM.Tool.linesToFragment(Elines);
     var lineCon = doc.firstChild;
     this.dom.appendChild(doc);
-    return new Tool.CoverView(lineCon);
+    return new LinkDOM.Tool.CoverView(lineCon);
+  }
+  coverView.link = function(source, target, conf){
+    return this.paint(LinkDOM.getLines([source,target], target, conf));
+  }
+  coverView.getContext = function (source, config){
+    return new LinkDOM.Tool.DrawContext(this, source, config);
   }
   return coverView
 }
 
+
 // 获取所有需要绘制的线以及其他信息
-LinkDOM.getLinesAndInfo = function(els,target,conf){
+LinkDOM.getLines = function(els,target,conf){
   var _this = this;
   conf = conf || {};
+  var maxDiameter = 0;
   var points = els.map(function(item) {
-    return _this.getCenterPointCoor(item);
-  })
+    var point = _this.getCenterPointCoor(item);
+    maxDiameter = point.diameter > maxDiameter ? point.diameter : maxDiameter;
+    return point
+  });
+  if(typeof conf.bridgeLineSkewing === 'undefined'){
+    conf.bridgeLineSkewing = maxDiameter * 0.5 + (maxDiameter > 1000 ? 200 : maxDiameter * 0.2);
+  }
   // el元素矩阵
   var Ematrix = _this.getPointsMatrix(points);
   var targetPoint = _this.getCenterPointCoor(target);
@@ -54,6 +68,7 @@ LinkDOM.getCenterPointCoor = function(el) {
     po: po,
     el: true, // element point
     pre: null, // 上一个节点
+    diameter: po.width > po.height ? po.width : po.height
   })
 }
 
@@ -62,13 +77,13 @@ LinkDOM.getLinesCoor = function(points,Ematrix,targetPoint,conf){
   var bridgePoint = {};
   var X = Ematrix.X;
   var Y = Ematrix.Y;
-  var edge = '';
-  var unedge = '';
+  var edge;
+  var unedge;
   var index = {};
   var lines = [];
   // 处理用户未设置但逻辑必需的配置
-  conf.lineWidth = conf.lineWidth || Tool.DEFAULT.lineWidth;
-  var skewing = conf.bridgeLineSkewing || Tool.DEFAULT.bridgeLineSkewing;
+  conf.lineWidth = conf.lineWidth || LinkDOM.Tool.DEFAULT.lineWidth;
+  var skewing = conf.bridgeLineSkewing || LinkDOM.Tool.DEFAULT.bridgeLineSkewing;
   // 获取边界方向
   index['x'] = X.indexOf(targetPoint.x);
   index['y']= Y.indexOf(targetPoint.y);
@@ -221,9 +236,9 @@ LinkDOM._getMiddlePointCoor = function(angleCoor) {
   })
 }
 
-// Tool
+// LinkDOM.Tool
 // 默认配置
-Tool.DEFAULT = {
+LinkDOM.Tool.DEFAULT = {
   lineWidth:2,
   bridgeLineSkewing:50,
   backgroundColor:'#00868B',
@@ -241,7 +256,7 @@ Tool.DEFAULT = {
 }
 
 // 静态常量
-Tool.STATIC = {
+LinkDOM.Tool.STATIC = {
   arrowLocalMap:{
     arrowStart_x_true:'left:0',
     arrowMiddle_x_true:'left:50%',
@@ -258,11 +273,9 @@ Tool.STATIC = {
   }
 }
 
-Tool._getArrowMainCss = function(lineType,local,line,conf){
+LinkDOM.Tool._getArrowMainCss = function(lineType,local,line,conf){
   // default
   var lineConfig = conf[lineType] || {}
-  // conf.lineConfig = conf.lineConfig || {};
-  // conf.lastLineConfig = conf.lastLineConfig || {};
   var cssArr = [
     'color:'+ (conf.arrowColor || conf.backgroundColor || this.DEFAULT.backgroundColor),
     'position:absolute',
@@ -322,8 +335,8 @@ Tool._getArrowMainCss = function(lineType,local,line,conf){
   cssArr.push('transform:translate('+ skew.join(',') +')');
   return cssArr;
 }
-
-Tool._isLightOnArrowPart = function (line,index,edge) {
+// 判断是否是箭头线段的尾部
+LinkDOM.Tool._isLightOnArrowPart = function (line,index,edge) {
   if(edge === 'x'){
     if(index === 1 || index === 3){
       return false;
@@ -347,8 +360,8 @@ Tool._isLightOnArrowPart = function (line,index,edge) {
     }
   }
 }
-
-Tool.createArrow = function(lineType,local,line,conf) {
+// 创建箭头
+LinkDOM.Tool.createArrow = function(lineType,local,line,conf) {
   var val = conf[lineType][local];
   var arrowMainCss = this._getArrowMainCss(lineType,local,line,conf);
   if(typeof val === 'object' && val !== null && val.css){
@@ -364,7 +377,7 @@ Tool.createArrow = function(lineType,local,line,conf) {
 }
 // @storm
 // 扩展原生  createElement
-Tool.createElement = function(tag,cssArr,attr) {
+LinkDOM.Tool.createElement = function(tag,cssArr,attr) {
   var dom = document.createElement(tag);
   if(cssArr){
     dom.style.cssText += cssArr.join(';');
@@ -376,8 +389,8 @@ Tool.createElement = function(tag,cssArr,attr) {
   }
   return dom;
 }
-
-Tool.linesToFragment = function(Elines) {
+// 创建line dom元素，放在文档片段中
+LinkDOM.Tool.linesToFragment = function(Elines) {
   var _this = this;
   var conf = Elines.conf;
   // 处理用户未配置但是逻辑需要的参数
@@ -400,8 +413,7 @@ Tool.linesToFragment = function(Elines) {
 }
 
 // @storm lineToElement
-Tool.lineToElement = function(line,conf){
-  // console.log(conf)
+LinkDOM.Tool.lineToElement = function(line,conf){
   var _this = this;
   var lineDOM = null; // line dom
   var left = line.start.x;
@@ -413,7 +425,6 @@ Tool.lineToElement = function(line,conf){
               ? conf.lineWidth
               : line.end.y - line.start.y;
   // 进行调整
-  // console.log(width);
   if(width < 0){
     left = left + width + conf.lineWidth;
     width = -1 * width;
@@ -422,8 +433,6 @@ Tool.lineToElement = function(line,conf){
     top = top + height + conf.lineWidth;
     height = -1 * height;
   }
-  // console.log(width);
-  //
   lineDOM = this.createElement('div',[
     'position:absolute',
     'background-color:' + this.DEFAULT.backgroundColor,
@@ -469,7 +478,7 @@ Tool.lineToElement = function(line,conf){
 }
 
 // @storm
-Tool.textToNodes = function(text){
+LinkDOM.Tool.textToNodes = function(text){
   // 检查类型， 要求必须是
   var nodes = [];
   if(typeof text === 'string'){
@@ -481,42 +490,50 @@ Tool.textToNodes = function(text){
 }
 
 // @storm 判断一个对象是否为DOM对象
-Tool.isDOM = ( typeof HTMLElement === 'object' ) ?
+LinkDOM.Tool.isDOM = ( typeof HTMLElement === 'object' ) ?
   function(obj){
       return obj instanceof HTMLElement;
   } :
   function(obj){
       return obj && typeof obj === 'object' && obj.nodeType === 1 && typeof obj.nodeName === 'string';
   }
+  LinkDOM.Tool.merge = function(target, source){
+    for(let prop in source){
+      if(source.hasOwnProperty(prop) && typeof source[prop] !== 'undefined'){
+         target[prop] = source[prop];
+      }
+    }
+  }
 
   // Interface
-  Tool.CoverView = function (dom){
-    if(Tool.isDOM(dom)){
+  LinkDOM.Tool.CoverView = function (dom){
+    if(LinkDOM.Tool.isDOM(dom)){
       this.dom = dom;
       this.style = this.dom.style;
     } else {
       console.error('dom except');
     }
   }
-  Tool.CoverView.prototype.show = function(){
+  LinkDOM.Tool.CoverView.prototype.show = function(){
     this.dom.style.setProperty('display','block');
     return this;
   }
-  Tool.CoverView.prototype.hide = function(){
+  LinkDOM.Tool.CoverView.prototype.hide = function(){
     this.dom.style.setProperty('display','none');
     return this;
   }
-  Tool.CoverView.prototype.hidden = function(){
+  LinkDOM.Tool.CoverView.prototype.hidden = function(){
     this.dom.style.setProperty('opacity',0);
     return this;
   }
   
-  Tool.CoverView.prototype.appear = function(){
+  LinkDOM.Tool.CoverView.prototype.appear = function(){
     this.dom.style.setProperty('opacity',1);
     return this;
   }
 
-  Tool.CoverView.prototype.fadeIn = function(dur){
+  LinkDOM.Tool.CoverView.prototype.fadeIn = function(dur){
+    console.log(this);
     var _this = this;
     dur = dur || this.DEFAULT.fadeIn.duration;
     this.style.setProperty('opacity', 0);
@@ -528,12 +545,32 @@ Tool.isDOM = ( typeof HTMLElement === 'object' ) ?
     return this;
   }
 
-  Tool.CoverView.prototype.fadeOut = function(dur){
+  LinkDOM.Tool.CoverView.prototype.fadeOut = function(dur){
     var _this = this;
     dur = dur || this.DEFAULT.fadeIn.duration;
     setTimeout(function(){
       _this.style.setProperty('transition','all ' + dur/1000 + 's ease-in-out');
       _this.style.setProperty('opacity', 0);
     },0);
+    return this;
+  }
+
+  LinkDOM.Tool.DrawContext = function(container, source, config){
+    this.$coverViews = [];
+    this.$elements = [source];
+    this.$container = container;
+    this.$config = config || {};
+  }
+  LinkDOM.Tool.DrawContext.prototype.linkTo = function(target,config){
+    config && LinkDOM.Tool.merge(this.$config,config);
+    var source = this.$elements.slice(-1)[0];
+    var coverView = this.$container.paint(LinkDOM.getLines([source,target],target,this.$config));
+    this.$elements.push(target);
+    // fadeIn 的优先级高
+    if(typeof this.$config.fadeIn === 'number'){
+      coverView.fadeIn(this.$config.fadeIn);
+    } else if(typeof this.$config.fadeOut === 'number'){
+      coverView.fadeOut(this.$config.fadeOut);
+    }
     return this;
   }

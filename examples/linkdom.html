@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>linkdom</title>
+    <style>
+      table{
+        width: 100%;
+        color: #d2d2d2;
+      }
+      .box{
+        display: inline-block;
+        width: 100px;
+        height: 50px;
+        line-height: 50px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        margin-left: 20px;
+        text-align: center;
+        color: red;
+        border: 1px solid;
+        cursor: pointer;
+      }
+      td{
+        border: 0px dashed;
+        width: 20%;
+      }
+      .item{
+        background:  #f2f2f2;
+        width: 100px;
+        height: 50px;
+        border: 1px solid #00868B;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #000;
+        margin-top: 20px;
+        margin-bottom: 20px;
+        margin-left: 20px;
+      }
+    </style>
+    <script src="../linkdom.js"></script>
+  </head>
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>1</th>
+          <th>2</th>
+          <th>3</th>
+          <th>4</th>
+          <th>5</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div id="box1" class="box group-1">BOX-1</div></td>
+          <td></td>
+          <td></td>
+          <td>
+            <div class="steps">第一步</div>
+          </td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>
+            <div id="box2" class="box group-1">BOX-2</div>
+          </td>
+          <td>
+            <!-- <div id="box5" class="box group-1">BOX-5</div> -->
+          </td>
+          <td></td>
+          <td><div class="steps">第二步</div></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>
+            <div id="box3" class="box group-1">BOX-3</div>
+          </td>
+          <td>
+            <div id="box5" class="box group-1">BOX-5</div>
+          </td>
+          <td></td>
+          <td><div class="steps">第三步</div></td>
+          <td>
+            <!-- <div id="box6" class="box">BOX-6</div> -->
+          </td>
+        </tr>
+        <tr>
+          <td><div id="box4" class="box group-1">BOX-4</div></td>
+          <td></td>
+          <td></td>
+          <td>
+            <div class="steps">第四步</div>
+          </td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>
+            <div id="box7" class="box group-1">BOX-7</div>
+          </td>
+          <td></td>
+          <td>
+            <!-- <div id="box7" class="box">BOX-7</div> -->
+          </td>
+          <td>
+            <div class="steps">第五步</div>
+          </td>
+          <td></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+  
+  </body>
+  <script type="text/javascript">
+    window.onload = function (){
+      var lineContainer = LinkDOM.createLineContainer();
+      var conf = {
+        // bridgeLineSkewing: 130,
+        lineWidth:2,
+        fadeIn:1000,
+        fadeOut:3000,
+        // backgroundColor:'green',
+        // arrowColor:'green',
+        arrowSize:8,
+        // lineConfig:{
+        //   innerHTML:'<a></a><div></div>', // string or dom
+        //   arrowEnd:true, // boolean or dom
+        //   arrowMiddle:true, // boolean or dom
+        //   arrowStart:true // boolean or dom
+        // },
+        lastLineConfig:{
+          // innerHTML:'<a></a>', // string or dom
+          arrowEnd:true, // boolean or dom
+        }
+      }
+      var boxs = Array.from(document.getElementsByClassName('group-1'));
+      var target = document.getElementById('box5');
+      var lines = LinkDOM.getLines(boxs,target,conf);
+      var lines1 = lineContainer.paint(lines);
+      lines1.fadeIn(1000);
+
+      var steps = Array.from(document.getElementsByClassName('steps'))
+      var ctx = lineContainer.getContext(steps[0],conf);
+      ctx.linkTo(steps[1])
+      .linkTo(steps[2])
+      .linkTo(steps[3])
+      .linkTo(steps[4]);
+
+      ;false && lineContainer.paint(LinkDOM.getLines(
+        [document.getElementById('box5'), document.getElementById('box6')],
+        document.getElementById('box6'),
+        conf
+      )).fadeOut(2000);
+      ;false && lineContainer.paint(LinkDOM.getLines(
+        Array.from(document.getElementsByClassName('box-2')),
+        document.getElementById('box4'),
+        conf
+      )).fadeIn(3000);
+    }
+
+  </script>
+</html>
