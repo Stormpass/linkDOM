@@ -30,9 +30,9 @@ var lineContainer = LinkDOM.createLineContainer();
 var steps = Array.from(document.getElementsByClassName('steps'))
 var ctx = lineContainer.getContext(steps[0],conf);
 ctx.linkTo(steps[1])
-.linkTo(steps[2])
-.linkTo(steps[3])
-.linkTo(steps[4]);
+  .linkTo(steps[2])
+  .linkTo(steps[3])
+  .linkTo(steps[4]);
 
 ```
 
