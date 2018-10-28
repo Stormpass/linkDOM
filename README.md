@@ -42,14 +42,14 @@ ctx.linkTo(steps[1])
 + getLines
 三个参数
 
-1.要连接的一组元素 <br/>
+1.要连接的一组元素，一个真正的数组，Array[element] <br/>
 2.目标元素，它必须是 boxs 中的一个，并且它的位置必须在这一组元素的边界上 <br/>
 3.配置参数 详见[config]<br/>
 
 获取 所定义的 需要连接的所有元素的信息，它的返回值直接用在 lineContainer 的 paint 方法中
 
 + createLineContainer
-无参数
+无参数<br/>
 创建一个容器并添加到body中，采用绝对定位，该方法返回一个 view 容器，它拥有 CoverView 的全部方法，另外它自身还有另外几个方法
 
 方法 | 说明
@@ -57,6 +57,8 @@ ctx.linkTo(steps[1])
 getContext | 返回一个 ctx 详见[ctx] 在该容器中获取一个上下文，接受一个参数 参数为dom元素 表示上下文的起始元素
 paint | 在容器中渲染一组线条 参数 必须是 LinkDOM.getLines 的返回值
 
++ link
+两个参数（你想要连接的连个元素）
 
 ### CoverView
 CoverView 是一个实现了一些 API 的容器
@@ -70,10 +72,3 @@ appear | 将容器设置为不透明
 fadeIn | 淡入， 接收一个时长参数 单位 毫秒（ms）
 fadeOut | 淡出， 接收一个时长参数 单位 毫秒（ms）
 destroy | 销毁容器 ，将容器从 文档中移除（待实现）
-
-### 功能
-
-+ 淡入淡出
-+ 显示隐藏
-+ 创建箭头
-+ 在连接的DOM中添加任意的 DOM元素
